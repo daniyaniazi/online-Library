@@ -1,68 +1,60 @@
 // constructor book
-function Book(name, author, type) {
+// console.log(firebase)
+// // ---------RELOAD DISPLAY-----------------------------
+function reload() {
+    firebase.database().ref('books').on('child_added', function(data) {
+        let tableBody = document.getElementById('tableBody');
+        var key = data.val().key
+        let uiString = `  <tr id='${key}'>
+                         <td>key</td>
+                         <td><b>${data.val().name}<b></td>
+                          <td>${data.val().author}</td>
+                          <td>${data.val().type}</td>
+                          <td><button class='btn btn-danger' id='${key}' onclick="delBook(this)">del</button></td>
+                          </tr>`;
+        tableBody.innerHTML += uiString;
+    })
+}
+reload()
+    // ----------------------------------------
+function Book(name, author, type, key) {
     this.name = name;
     this.author = author;
     this.type = type;
+    this.key = key
 }
 // DISPLAY CONSTRUCTOR
-function Display() {
-
-}
-
-// Add methods to display
-Display.prototype.add = function(book) {
-        console.log(`adding to ui`);
-        let tableBody = document.getElementById('tableBody');
-        let uiString = ` <tr>
-                          <th scope="row">*</th>
-                          <td><b>${book.name}<b></td>
-                          <td>${book.author}</td>
-                          <td>${book.type}</td>
-                     </tr>`;
-        tableBody.innerHTML += uiString;
-
-    }
-    // clear form
+function Display() {}
+//----> clear form
 Display.prototype.clearform = function() {
     libraryForm.reset();
-    console.log(`clearing form`)
-        // reseting form;
+    // console.log(`clearing form`)
+    // reseting form;
 };
-// validate
+// ---->  validate
 Display.prototype.validate = function(book) {
     if (book.name.length > 2 || book.author.length > 2) {
         return true;
     } else
         return false;
 };
-// show
+// ----> show
 Display.prototype.show = function(status) {
-    let message = document.getElementById('statusmessage')
-    if (status == 'success') {
-        message.innerHTML = `<div class="alert alert-success" role="alert">
+        let message = document.getElementById('statusmessage')
+        if (status == 'success') {
+            message.innerHTML = `<div class="alert alert-success" role="alert">
         <b>Success</b> Your book is succesfully added!
       </div>`;
-    } else if (status == 'error') {
-        message.innerHTML = `<div class="alert alert-danger" role="alert">
+        } else if (status == 'error') {
+            message.innerHTML = `<div class="alert alert-danger" role="alert">
         <b>Sorry</b > You may have not given proper name
       </div>`;
-
+        }
+        setTimeout(function() {
+            message.innerHTML = '';
+        }, 2000);
     }
-
-    setTimeout(function() {
-        message.innerHTML = '';
-    }, 2000);
-
-
-
-}
-
-
-
-
-
-
-// Submit event listener
+    // ---->  Submit event listener
 let libraryForm = document.getElementById('library-form');
 libraryForm.addEventListener('submit', libraryFormSubmit);
 
@@ -83,27 +75,28 @@ function libraryFormSubmit(e) {
     } else if (cooking.checked) {
         typeradio = cooking.value;
     }
-
-
-    // when ever submit new book object created
-    let book = new Book(name, author, typeradio);
-    console.log(`submited`);
-    console.log(book);
-
-    // display
+    // ---->  when ever submit new book object created
+    var ref = firebase.database().ref('books')
+    var key = ref.push().key
+    let book = new Book(name, author, typeradio, key);
+    ref.child(key).set(book)
+        //---->  display
     let displayBook = new Display();
     if (displayBook.validate(book)) {
-        displayBook.add(book);
         displayBook.show('success');
+        // reload()
     } else {
         // error
         displayBook.show('error');
     }
-
     displayBook.clearform();
-
     e.preventDefault();
 }
-// remaining work
-// Delete function
-// local storage
+
+function delBook(e) {
+    console.log(e.id)
+    key = e.id
+    firebase.database().ref('books').child(e.id).remove()
+    e.parentNode.parentNode.remove()
+
+}
